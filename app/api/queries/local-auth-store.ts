@@ -45,8 +45,8 @@ let nextId = 1;
 function syncIndexes(user: LocalUserRecord) {
   usersById.set(user.id, user);
   usersByUnionId.set(user.unionId, user);
-  usersByUsername.set(user.username, user);
-  usersByEmail.set(user.email, user);
+  usersByUsername.set(user.username.toLowerCase(), user);
+  usersByEmail.set(user.email.toLowerCase(), user);
 }
 
 function getDeviceMap(userId: number) {
@@ -94,11 +94,11 @@ function clearIndexes(user: LocalUserRecord) {
   if (user.unionId && usersByUnionId.get(user.unionId) === user) {
     usersByUnionId.delete(user.unionId);
   }
-  if (usersByUsername.get(user.username) === user) {
-    usersByUsername.delete(user.username);
+  if (usersByUsername.get(user.username.toLowerCase()) === user) {
+    usersByUsername.delete(user.username.toLowerCase());
   }
-  if (usersByEmail.get(user.email) === user) {
-    usersByEmail.delete(user.email);
+  if (usersByEmail.get(user.email.toLowerCase()) === user) {
+    usersByEmail.delete(user.email.toLowerCase());
   }
 }
 
@@ -145,7 +145,8 @@ export function findLocalUserByUnionId(unionId: string) {
 }
 
 export function findLocalUserByUsernameOrEmail(identifier: string) {
-  return usersByUsername.get(identifier) ?? usersByEmail.get(identifier);
+  const lower = identifier.toLowerCase();
+  return usersByUsername.get(lower) ?? usersByEmail.get(lower);
 }
 
 export function ensureLocalUserUnionId(user: LocalUserRecord) {

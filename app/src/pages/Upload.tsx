@@ -49,7 +49,8 @@ export default function Upload() {
   const [uploads, setUploads] = useState<UploadFile[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [uploadMode, setUploadMode] = useState<"files" | "folders">("files");
-  const [folderId] = useState<number | undefined>();
+  const folderIdParam = searchParams.get("folderId");
+  const folderId = folderIdParam ? parseInt(folderIdParam, 10) : undefined;
   const fileInputRef = useRef<HTMLInputElement>(null);
   const controlsRef = useRef<Record<string, UploadControl>>({});
   const utils = trpc.useUtils();

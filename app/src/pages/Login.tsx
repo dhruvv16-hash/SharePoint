@@ -55,7 +55,7 @@ export default function Login() {
 
   const signupMutation = trpc.localAuth.signup.useMutation({
     onSuccess: () => {
-      toast.success("Account created! Please log in.");
+      toast.success("Account created successfully!");
       window.location.href = "/";
     },
     onError: (err) => {

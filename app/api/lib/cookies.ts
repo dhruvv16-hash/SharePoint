@@ -11,8 +11,8 @@ function isSecureRequest(headers: Headers): boolean {
     return true;
   }
 
-  const host = headers.get("host") || "";
-  return host.startsWith("localhost:") || host.startsWith("127.0.0.1:");
+  // In local HTTP development, we must not enforce the Secure flag on cookies.
+  return false;
 }
 
 export function getSessionCookieOptions(headers: Headers): CookieOptions {

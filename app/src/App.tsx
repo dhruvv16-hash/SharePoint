@@ -13,12 +13,14 @@ import Search from "./pages/Search";
 import Admin from "./pages/Admin";
 import AIAssistant from "./pages/AIAssistant";
 import Settings from "./pages/Settings";
+import ShareLanding from "./pages/ShareLanding";
 import NotFound from "./pages/NotFound";
 
 export default function App() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
+      <Route path="/share/:token" element={<ShareLanding />} />
       <Route element={<AppLayout />}>
         <Route path="/" element={<Home />} />
         <Route path="/vault" element={<Vault />} />

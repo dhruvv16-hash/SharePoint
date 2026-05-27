@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 import { trpc } from "@/providers/trpc";
 import {
   Folder,
@@ -54,8 +54,67 @@ function formatDate(date: Date | null) {
   });
 }
 
+function getFileType(name: string, mimeType?: string | null): string {
+  const mime = (mimeType || "").toLowerCase();
+  if (mime.startsWith("image/")) return "image";
+  if (mime.startsWith("video/")) return "video";
+  if (mime.startsWith("audio/")) return "audio";
+  if (
+    mime.startsWith("text/") ||
+    mime.includes("pdf") ||
+    mime.includes("document") ||
+    mime.includes("sheet") ||
+    mime.includes("presentation") ||
+    mime.includes("msword") ||
+    mime.includes("excel") ||
+    mime.includes("powerpoint") ||
+    mime.includes("epub") ||
+    mime.includes("zip") ||
+    mime.includes("tar") ||
+    mime.includes("rar") ||
+    mime.includes("archive")
+  ) {
+    return "document";
+  }
+
+  const ext = name.split(".").pop()?.toLowerCase();
+  if (ext) {
+    if (["png", "jpg", "jpeg", "gif", "webp", "svg", "bmp", "ico"].includes(ext)) return "image";
+    if (["mp4", "webm", "mkv", "avi", "mov", "wmv", "flv"].includes(ext)) return "video";
+    if (["mp3", "wav", "ogg", "m4a", "flac", "aac"].includes(ext)) return "audio";
+    if (
+      [
+        "pdf",
+        "doc",
+        "docx",
+        "xls",
+        "xlsx",
+        "ppt",
+        "pptx",
+        "txt",
+        "rtf",
+        "csv",
+        "json",
+        "xml",
+        "zip",
+        "rar",
+        "7z",
+        "tar",
+        "gz",
+      ].includes(ext)
+    ) {
+      return "document";
+    }
+  }
+
+  return "other";
+}
+
 export default function Vault() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const typeFilter = searchParams.get("type");
+
   const [currentFolder, setCurrentFolder] = useState<number | undefined>();
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [sortBy, setSortBy] = useState<"name" | "date" | "size">("date");
@@ -65,12 +124,29 @@ export default function Vault() {
   const [createFolderDialog, setCreateFolderDialog] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
 
-  const { data: vaultData, isLoading, refetch } = trpc.vault.list.useQuery({
-    folderId: currentFolder,
-  });
+  const { data: vaultData, isLoading: isVaultLoading, refetch: refetchVault } = trpc.vault.list.useQuery(
+    { folderId: currentFolder },
+    { enabled: !typeFilter }
+  );
+
+  const { data: searchData, isLoading: isSearchLoading, refetch: refetchSearch } = trpc.search.advanced.useQuery(
+    { q: "" },
+    { enabled: !!typeFilter }
+  );
+
+  const isLoading = typeFilter ? isSearchLoading : isVaultLoading;
+
+  const refetch = () => {
+    if (typeFilter) {
+      refetchSearch();
+    } else {
+      refetchVault();
+    }
+  };
+
   const { data: breadcrumbs } = trpc.vault.breadcrumbs.useQuery(
     { folderId: currentFolder! },
-    { enabled: !!currentFolder }
+    { enabled: !!currentFolder && !typeFilter }
   );
 
   const renameMutation = trpc.vault.rename.useMutation({
@@ -130,13 +206,20 @@ export default function Vault() {
     setSelectedItems(next);
   };
 
-  const sortedFiles = [...(vaultData?.files || [])].sort((a, b) => {
+  const rawFiles = typeFilter ? (searchData?.files || []) : (vaultData?.files || []);
+  const rawFolders = typeFilter ? [] : (vaultData?.folders || []);
+
+  const filteredFiles = typeFilter
+    ? rawFiles.filter((file) => getFileType(file.name, file.mimeType) === typeFilter)
+    : rawFiles;
+
+  const sortedFiles = [...filteredFiles].sort((a, b) => {
     if (sortBy === "name") return a.name.localeCompare(b.name);
     if (sortBy === "size") return (b.size || 0) - (a.size || 0);
     return new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime();
   });
 
-  const sortedFolders = [...(vaultData?.folders || [])].sort((a, b) => {
+  const sortedFolders = [...rawFolders].sort((a, b) => {
     if (sortBy === "name") return a.name.localeCompare(b.name);
     return new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime();
   });
@@ -156,11 +239,22 @@ export default function Vault() {
         {/* Breadcrumbs */}
         <div className="flex items-center gap-1 text-[13px]">
           <button
-            onClick={() => navigate("/upload?modal=1")}
-            className={`hover:underline ${!currentFolder ? "font-medium" : ""}`}
+            onClick={() => {
+              setCurrentFolder(undefined);
+              if (typeFilter) {
+                navigate("/vault");
+              }
+            }}
+            className={`hover:underline ${!currentFolder && !typeFilter ? "font-medium" : ""}`}
           >
             My Vault
           </button>
+          {typeFilter && (
+            <span className="flex items-center gap-1">
+              <ChevronRight size={14} className="text-[#888888]" />
+              <span className="font-medium capitalize">{typeFilter}s</span>
+            </span>
+          )}
           {breadcrumbs?.map((crumb) => (
             <span key={crumb.id} className="flex items-center gap-1">
               <ChevronRight size={14} className="text-[#888888]" />
@@ -176,22 +270,26 @@ export default function Vault() {
 
         {/* Actions */}
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setCreateFolderDialog(true)}
-            className="text-[12px] h-8 border-[rgba(0,0,0,0.08)]"
-          >
-            + Folder
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => navigate("/upload?modal=1")}
-            className="text-[12px] h-8 bg-black text-white hover:bg-[#222] border-0"
-          >
-            Upload
-          </Button>
+          {!typeFilter && (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCreateFolderDialog(true)}
+                className="text-[12px] h-8 border-[rgba(0,0,0,0.08)]"
+              >
+                + Folder
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate(`/upload?modal=1${currentFolder ? `&folderId=${currentFolder}` : ""}`)}
+                className="text-[12px] h-8 bg-black text-white hover:bg-[#222] border-0"
+              >
+                Upload
+              </Button>
+            </>
+          )}
           <div className="flex items-center border border-[rgba(0,0,0,0.08)] rounded ml-1">
             <button
               onClick={() => setViewMode("grid")}
@@ -378,7 +476,7 @@ export default function Vault() {
             <p className="text-[14px] mb-2">This folder is empty</p>
             <p className="text-[12px] mb-4">Upload files or create folders to get started</p>
             <Button
-              onClick={() => navigate("/upload?modal=1")}
+              onClick={() => navigate(`/upload?modal=1${currentFolder ? `&folderId=${currentFolder}` : ""}`)}
               className="bg-black text-white hover:bg-[#222] text-[12px]"
             >
               Upload Files

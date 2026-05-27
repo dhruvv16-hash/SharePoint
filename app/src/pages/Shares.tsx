@@ -38,6 +38,12 @@ export default function Shares() {
     },
   });
 
+  const { data: vaultItems } = trpc.vault.list.useQuery(
+    { showDeleted: false },
+    { enabled: !preselectedFileId }
+  );
+
+  const [selectedFileId, setSelectedFileId] = useState<string>("");
   const [createOpen, setCreateOpen] = useState(!!preselectedFileId);
   const [shareType, setShareType] = useState("private");
   const [password, setPassword] = useState("");
@@ -45,22 +51,36 @@ export default function Shares() {
   const [permissions, setPermissions] = useState("read");
   const [maxDownloads, setMaxDownloads] = useState("");
 
+  const formatBytes = (bytes: number) => {
+    if (!bytes) return "0 B";
+    const k = 1024;
+    const sizes = ["B", "KB", "MB", "GB", "TB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
+  };
+
   const createMutation = trpc.share.create.useMutation({
     onSuccess: (data) => {
       toast.success(`Share created: ${data.shareUrl}`);
       setCreateOpen(false);
+      setSelectedFileId("");
       refetch();
     },
   });
 
   const handleCreate = () => {
+    const finalFileId = preselectedFileId || (selectedFileId && selectedFileId !== "no-files" ? parseInt(selectedFileId, 10) : undefined);
+    if (!finalFileId) {
+      toast.error("Please select a file to share");
+      return;
+    }
     createMutation.mutate({
-      fileId: preselectedFileId,
+      fileId: finalFileId,
       shareType: shareType as "private" | "password" | "public" | "team",
       password: password || undefined,
       permissions: permissions as "read" | "write" | "upload" | "admin",
-      expiresIn: expiresIn ? parseInt(expiresIn) : undefined,
-      maxDownloads: maxDownloads ? parseInt(maxDownloads) : undefined,
+      expiresIn: expiresIn ? parseInt(expiresIn, 10) : undefined,
+      maxDownloads: maxDownloads ? parseInt(maxDownloads, 10) : undefined,
     });
   };
 
@@ -181,6 +201,30 @@ export default function Shares() {
             <DialogTitle className="text-[14px] font-normal">Create Share Link</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
+            {!preselectedFileId && (
+              <div>
+                <label className="text-[11px] text-[#888888] uppercase tracking-[0.5px]">
+                  Select File
+                </label>
+                <Select value={selectedFileId} onValueChange={setSelectedFileId}>
+                  <SelectTrigger className="text-[12px] mt-1">
+                    <SelectValue placeholder="Choose a file..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {vaultItems?.files && vaultItems.files.length > 0 ? (
+                      vaultItems.files.map((file) => (
+                        <SelectItem key={file.id} value={String(file.id)}>
+                          {file.name} ({formatBytes(file.size || 0)})
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="no-files" disabled>No files available in root</SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
             <div>
               <label className="text-[11px] text-[#888888] uppercase tracking-[0.5px]">
                 Share Type
