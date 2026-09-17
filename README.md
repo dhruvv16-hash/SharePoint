@@ -4,7 +4,7 @@ SharedPoint is a secure, collaborative, and permanent digital vault system. It a
 
 ---
 
-## 🌟 Key Concept: The Dual-Path Design
+##  Key Concept: The Dual-Path Design
 
 SharedPoint features a **Dual-Path State engine**. This means the application can operate in two modes depending on its configuration:
 
@@ -13,7 +13,7 @@ SharedPoint features a **Dual-Path State engine**. This means the application ca
 
 ---
 
-## 🏗️ Architecture & System Design
+##  Architecture & System Design
 
 SharedPoint uses a hybrid model where a Vite-powered React single page application and a Node.js Hono API server run in a unified process.
 
@@ -42,7 +42,7 @@ graph TD
 
 ---
 
-## 📁 Project Directory Structure
+##  Project Directory Structure
 
 ```filepath
 ├── app/
@@ -68,33 +68,33 @@ graph TD
 
 ---
 
-## 🚀 Key Features & Interface Mockups
+##  Key Features & Interface Mockups
 
-### 🔒 Secure Storage Vault
+###  Secure Storage Vault
 Manage folders and documents through a sleek, unified catalog. Features list/grid views, metadata filtering, drag-and-drop movement, and a 30-day trash retention recovery.
 
 ![Vault Dashboard Mockup](assets/vault_dashboard.png)
 
-### 📦 Chunked Large-File Uploads
+###  Chunked Large-File Uploads
 Supports files of any size by slicing them into 5MB chunks on the client side. Includes real-time progress bars, upload speed indicators, and pause/resume/cancel controls.
 
-### 🤖 Intelligent AI Assistant
+###  Intelligent AI Assistant
 Conversational chat UI that hooks into client tRPC requests. Instantly query your metadata: search files, list active media (images/videos), retrieve recently deleted items, or locate items in specific directories.
 
 ![AI Assistant Conversational Interface](assets/ai_assistant.png)
 
-### 🤝 Team Workspaces
+###  Team Workspaces
 Isolated shared spaces built for organization-level projects. Invite members, assign permissions (`manager`, `editor`, `viewer`, `guest`), transfer ownership, and view real-time activity streams.
 
-### 🔗 Link Sharing & Recovery Control
+###  Link Sharing & Recovery Control
 Generate tokenized sharing URLs protected by passwords, download count limits, and custom expiration dates. Restores are simple through soft-delete tracking.
 
-### 💾 Point-in-Time Snapshots
+###  Point-in-Time Snapshots
 Create instant snapshots of your folder hierarchy and file states to act as recovery checkpoints. Restore files back to any historical version easily.
 
 ---
 
-## 🔧 Installation & Setup
+##  Installation & Setup
 
 Follow these steps to run SharedPoint locally:
 
@@ -124,7 +124,7 @@ Open **`http://localhost:3001`** in your browser.
 
 ---
 
-## 🛠️ DB Migrations (For Cloud Mode Only)
+##  DB Migrations (For Cloud Mode Only)
 If you configure a real MySQL connection via `DATABASE_URL`, execute the schema creation commands:
 * **Generate Schema**: `npm run db:generate`
 * **Push Schema to DB**: `npm run db:push`
